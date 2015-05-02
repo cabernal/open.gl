@@ -61,7 +61,8 @@ int main(int atgc, char *argv[])
     // Create OpenGL context
     SDL_GLContext context = SDL_GL_CreateContext(window);
 
-    glewExperimental = GL_TRUE;
+    // Initialize GLEW
+	glewExperimental = GL_TRUE;
     glewInit();
 	
 	// Create VAO, and start using  it
@@ -77,15 +78,9 @@ int main(int atgc, char *argv[])
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	/** Create  and compile shaders **/
-
-	// Create shader object
+	// Create and compile vertex shader
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-	// Load shader source ref
 	glShaderSource(vertexShader,  1, &vertex_shader_src, NULL);
-
-	// Compile shader
 	glCompileShader(vertexShader);
 
 	// Create and compile fragment shader
@@ -100,36 +95,23 @@ int main(int atgc, char *argv[])
 		return -1;
 	}
 
-	// Combine shaders
+	// Link the vertex and fragment shader into a shader program
 	GLuint shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
 	glAttachShader(shaderProgram, fragmentShader);
-
-	// Specify outColor to be written to buffer 0
 	glBindFragDataLocation(shaderProgram, 0, "outColor");
-
-	// Connect shaders by linking the program
 	glLinkProgram(shaderProgram);
-
-	// Start using shaders
 	glUseProgram(shaderProgram);
 
-	/** Making link between vertex data and attributes **/
-
-	// Retrieve reference to position input to vertex shader
+	// Specify the layout of the vertex data
 	GLint posAttr = glGetAttribLocation(shaderProgram, "position");
-
-	// Specify how data from input position is retrieved from the array
-	glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-	// Enable vertex attribute array
 	glEnableVertexAttribArray(posAttr);
+	glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
 
 	//** Start Drawing **//
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	printf("GL Errors: %u\n", glGetError());
 
 
     printf("%u\n", vbo);
