@@ -3,6 +3,50 @@
 #include <SDL.h>
 #include <SDL_opengl.h>
 
+/* 
+	- Place holder shaders.
+	- TODO: Put these in their own files
+*/
+const char *vertex_shader_src = 
+"#version 150\n\
+in vec2 position;\n\
+void main()\n\
+{\n\
+	gl_Position = vec4(position, 0.0, 1.0);\n\
+}";
+
+const char *fragment_shader_src = 
+"#version 150\n\
+out vec4 outColor; \n\
+void main() \n\
+{ \n\
+outColor = vec4(1.0, 1.0, 1.0, 1.0); \n\
+}";
+
+float vertices[] = {
+     0.0f,  0.5f, // Vertex 1 (X, Y)
+     0.5f, -0.5f, // Vertex 2 (X, Y)
+    -0.5f, -0.5f  // Vertex 3 (X, Y)
+};
+
+GLint check_shader_compilation_status(GLint vertexShader)
+{
+	// Get shader compilation status
+	GLint status;
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &status);
+
+	if (status != GL_TRUE)
+	{
+			char compile_log[512];
+			glGetShaderInfoLog(vertexShader, sizeof(compile_log), NULL, compile_log);
+			printf("Shader compilation failed.\n");
+			printf("Shader compilation log: %s\n", compile_log);
+	}
+
+	return status;
+}
+
+
 int main(int atgc, char *argv[])
 {
     SDL_Init(SDL_INIT_VIDEO);
@@ -19,11 +63,76 @@ int main(int atgc, char *argv[])
 
     glewExperimental = GL_TRUE;
     glewInit();
+	
+	// Create VAO, and start using  it
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 
-    GLuint vertexBuffer;
-    glGenBuffers(1, &vertexBuffer);
+    // Create vertex buffer object
+	GLuint vbo;
+    glGenBuffers(1, &vbo);
 
-    printf("%u\n", vertexBuffer);
+	// Active vertex buffer object, and copy data into it
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	/** Create  and compile shaders **/
+
+	// Create shader object
+	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+
+	// Load shader source ref
+	glShaderSource(vertexShader,  1, &vertex_shader_src, NULL);
+
+	// Compile shader
+	glCompileShader(vertexShader);
+
+	// Create and compile fragment shader
+	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragment_shader_src, NULL);
+	glCompileShader(fragmentShader);
+
+	// Check for any shader compilation errors
+	if (check_shader_compilation_status(vertexShader) != GL_TRUE ||
+		check_shader_compilation_status(fragmentShader) != GL_TRUE)
+	{
+		return -1;
+	}
+
+	// Combine shaders
+	GLuint shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+
+	// Specify outColor to be written to buffer 0
+	glBindFragDataLocation(shaderProgram, 0, "outColor");
+
+	// Connect shaders by linking the program
+	glLinkProgram(shaderProgram);
+
+	// Start using shaders
+	glUseProgram(shaderProgram);
+
+	/** Making link between vertex data and attributes **/
+
+	// Retrieve reference to position input to vertex shader
+	GLint posAttr = glGetAttribLocation(shaderProgram, "position");
+
+	// Specify how data from input position is retrieved from the array
+	glVertexAttribPointer(posAttr, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// Enable vertex attribute array
+	glEnableVertexAttribArray(posAttr);
+
+
+	//** Start Drawing **//
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	printf("GL Errors: %u\n", glGetError());
+
+
+    printf("%u\n", vbo);
 
 
     // Event loop
