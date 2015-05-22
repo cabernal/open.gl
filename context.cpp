@@ -23,6 +23,15 @@ void main() \n\
 outColor = vec4(1.0, 1.0, 1.0, 1.0); \n\
 }";
 
+const char *uniform_fragment_shader_src = 
+"#version 150\n\
+uniform vec3 triangleColor; \n\
+out vec4 outColour; \n\
+void main() \n\
+{ \n\
+outColor = vec4(triangleColor, 1.0); \n\
+}";
+
 float vertices[] = {
      0.0f,  0.5f, // Vertex 1 (X, Y)
      0.5f, -0.5f, // Vertex 2 (X, Y)
